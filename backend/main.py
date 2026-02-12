@@ -1,9 +1,12 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import timedelta, datetime
+import json
+import os
 
 import database
 import schemas
@@ -220,6 +223,96 @@ async def get_stats_by_empresa(
     ).group_by(database.Task.empresa).all()
     
     return [{"empresa": r.empresa, "total": r.total} for r in results]
+
+# ==================== DOCUMENT DOWNLOAD ====================
+
+@app.get("/tasks/{task_id}/download/{format}")
+async def download_task_document(
+    task_id: int,
+    format: str,  # pdf, docx, xlsx
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_active_user)
+):
+    """
+    Gera e faz download de documento em formato específico
+    """
+    # Buscar tarefa
+    task = db.query(database.Task).filter(database.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    
+    if not task.resultado:
+        raise HTTPException(status_code=400, detail="Tarefa não tem resultado")
+    
+    # Preparar dados
+    try:
+        # Tentar parsear como JSON
+        if task.resultado.strip().startswith('{'):
+            data = json.loads(task.resultado)
+        else:
+            # HTML ou texto
+            data = {"content": task.resultado}
+    except:
+        data = {"content": task.resultado}
+    
+    task_title = task.titulo
+    
+    # Gerar documento conforme formato
+    try:
+        if format == "docx":
+            # Gerar Word
+            from kalu_document_generator_advanced import generate_word_document
+            output_path = f"/tmp/task_{task_id}.docx"
+            generate_word_document(data, task_title, output_path)
+            
+            return FileResponse(
+                path=output_path,
+                media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                filename=f"{task_title[:50].replace(' ', '_')}.docx",
+                headers={"Content-Disposition": f"attachment; filename={task_title[:50].replace(' ', '_')}.docx"}
+            )
+        
+        elif format == "xlsx":
+            # Gerar Excel
+            from kalu_document_generator_advanced import generate_excel_document
+            output_path = f"/tmp/task_{task_id}.xlsx"
+            generate_excel_document(data, task_title, output_path)
+            
+            return FileResponse(
+                path=output_path,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                filename=f"{task_title[:50].replace(' ', '_')}.xlsx",
+                headers={"Content-Disposition": f"attachment; filename={task_title[:50].replace(' ', '_')}.xlsx"}
+            )
+        
+        elif format == "pdf":
+            # Gerar PDF
+            from kalu_document_generator_advanced import generate_pdf_from_html
+            from kalu_document_generator import generate_html_report, generate_markdown_report
+            
+            # Se já for HTML, usar direto
+            if task.resultado_tipo == "html" and task.resultado.strip().startswith('<'):
+                html_content = task.resultado
+            else:
+                # Gerar HTML do JSON/texto
+                markdown = generate_markdown_report(data, task_title)
+                html_content = generate_html_report(markdown)
+            
+            output_path = f"/tmp/task_{task_id}.pdf"
+            generate_pdf_from_html(html_content, output_path)
+            
+            return FileResponse(
+                path=output_path,
+                media_type="application/pdf",
+                filename=f"{task_title[:50].replace(' ', '_')}.pdf",
+                headers={"Content-Disposition": f"attachment; filename={task_title[:50].replace(' ', '_')}.pdf"}
+            )
+        
+        else:
+            raise HTTPException(status_code=400, detail=f"Formato não suportado: {format}")
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar documento: {str(e)}")
 
 # ==================== HEALTH CHECK ====================
 

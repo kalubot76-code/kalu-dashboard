@@ -147,6 +147,27 @@ function App() {
     }
   };
 
+  const downloadDocument = async (taskId, format, taskTitle) => {
+    try {
+      const response = await api.get(`/tasks/${taskId}/download/${format}`, {
+        responseType: 'blob'
+      });
+      
+      // Criar link de download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${taskTitle.replace(/ /g, '_')}.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erro ao fazer download:', err);
+      alert(`Erro ao gerar ${format.toUpperCase()}. Verifique se as bibliotecas estão instaladas no servidor.`);
+    }
+  };
+
   const onDragEnd = (result) => {
     if (!result.destination) return;
     
@@ -637,6 +658,31 @@ function App() {
                     Concluído em: {new Date(selectedTask.completado_em).toLocaleString('pt-PT')}
                   </div>
                 )}
+                
+                {/* Botões de Download */}
+                <div className="download-buttons">
+                  <button 
+                    onClick={() => downloadDocument(selectedTask.id, 'pdf', selectedTask.titulo)}
+                    className="btn-download btn-pdf"
+                    title="Baixar PDF"
+                  >
+                    📄 PDF
+                  </button>
+                  <button 
+                    onClick={() => downloadDocument(selectedTask.id, 'docx', selectedTask.titulo)}
+                    className="btn-download btn-docx"
+                    title="Baixar Word"
+                  >
+                    📝 Word
+                  </button>
+                  <button 
+                    onClick={() => downloadDocument(selectedTask.id, 'xlsx', selectedTask.titulo)}
+                    className="btn-download btn-xlsx"
+                    title="Baixar Excel"
+                  >
+                    📊 Excel
+                  </button>
+                </div>
               </div>
             )}
             
