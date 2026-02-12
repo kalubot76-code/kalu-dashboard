@@ -168,6 +168,46 @@ def save_markdown_report(markdown: str, filename: str, output_dir: str = "/tmp")
     return filepath
 
 
+def generate_html_content_only(markdown: str) -> str:
+    """
+    Converte markdown para HTML (apenas conteúdo, sem <html><head>)
+    
+    Args:
+        markdown: Conteúdo em markdown
+        
+    Returns:
+        str: HTML puro (sem tags html/head/body)
+    """
+    html = markdown
+    
+    # Conversões básicas de markdown para HTML
+    # Títulos
+    import re
+    html = re.sub(r'^# (.+)$', r'<h1>\1</h1>', html, flags=re.MULTILINE)
+    html = re.sub(r'^## (.+)$', r'<h2>\1</h2>', html, flags=re.MULTILINE)
+    html = re.sub(r'^### (.+)$', r'<h3>\1</h3>', html, flags=re.MULTILINE)
+    
+    # Negrito
+    html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html)
+    
+    # Itálico
+    html = re.sub(r'\*(.+?)\*', r'<em>\1</em>', html)
+    
+    # Listas
+    html = re.sub(r'^\- (.+)$', r'<li>\1</li>', html, flags=re.MULTILINE)
+    html = re.sub(r'((?:<li>.*?</li>\n)+)', r'<ul>\1</ul>', html)
+    
+    # Parágrafos (texto entre linhas vazias)
+    html = re.sub(r'\n\n(.+?)\n\n', r'\n\n<p>\1</p>\n\n', html)
+    
+    # Horizontal rule
+    html = html.replace('---', '<hr>')
+    
+    # Limpar quebras de linha múltiplas
+    html = re.sub(r'\n{3,}', '\n\n', html)
+    
+    return html
+
 def generate_html_report(markdown: str) -> str:
     """
     Converte markdown para HTML com estilo
@@ -286,7 +326,7 @@ def save_html_report(html: str, filename: str, output_dir: str = "/tmp") -> str:
 
 
 def generate_report(data: Dict[str, Any], task_title: str, output_format: str = "markdown", 
-                   filename: str = None, output_dir: str = "/tmp") -> str:
+                   filename: str = None, output_dir: str = "/tmp", content_only: bool = False) -> str:
     """
     Gera relatório no formato especificado
     
@@ -311,8 +351,13 @@ def generate_report(data: Dict[str, Any], task_title: str, output_format: str = 
         return save_markdown_report(markdown, filename, output_dir)
     
     elif output_format == "html":
-        html = generate_html_report(markdown)
-        return save_html_report(html, filename, output_dir)
+        if content_only:
+            # Retorna apenas conteúdo HTML (sem html/head/body tags)
+            html_content = generate_html_content_only(markdown)
+            return html_content  # Retorna string, não salva em ficheiro
+        else:
+            html = generate_html_report(markdown)
+            return save_html_report(html, filename, output_dir)
     
     elif output_format == "pdf":
         # HTML primeiro, depois converter para PDF

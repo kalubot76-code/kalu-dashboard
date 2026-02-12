@@ -74,18 +74,13 @@ class KaluDashboard:
                 try:
                     data = json.loads(resultado) if isinstance(resultado, str) else resultado
                     
-                    # Gerar documento HTML
-                    html_path = generate_report(
+                    # Gerar conteúdo HTML puro (sem html/head/body tags)
+                    html_content = generate_report(
                         data=data,
                         task_title=task_title,
                         output_format="html",
-                        filename=f"task_{task_id}",
-                        output_dir="/tmp/kalu_reports"
+                        content_only=True  # Retorna string diretamente
                     )
-                    
-                    # Ler conteúdo HTML
-                    with open(html_path, 'r', encoding='utf-8') as f:
-                        html_content = f.read()
                     
                     # Atualizar payload
                     resultado = html_content
