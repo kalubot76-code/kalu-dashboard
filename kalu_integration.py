@@ -10,6 +10,12 @@ import requests
 from typing import List, Dict, Optional
 from datetime import datetime
 import json
+import sys
+import os
+
+# Importar gerador de documentos
+sys.path.insert(0, '/root/clawd')
+from kalu_document_generator import generate_report
 
 # Configuração
 API_URL = "https://kalu-dashboard-api.onrender.com"  # Ajustar conforme deployment
@@ -29,9 +35,12 @@ class KaluDashboard:
             List[Dict]: Lista de tarefas pendentes
         """
         try:
-            response = requests.get(f"{self.api_url}/tasks/pending", timeout=10)
+            response = requests.get(f"{self.api_url}/tasks/pending", timeout=30)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.Timeout:
+            print(f"⚠️ Timeout ao conectar ao backend (servidor pode estar a acordar)")
+            return []
         except Exception as e:
             print(f"❌ Erro ao obter tarefas: {e}")
             return []
@@ -41,7 +50,9 @@ class KaluDashboard:
         task_id: int,
         resultado: str,
         resultado_tipo: str = "text",
-        resultado_url: Optional[str] = None
+        resultado_url: Optional[str] = None,
+        generate_document: bool = True,
+        task_title: str = "Relatório"
     ) -> bool:
         """
         Adiciona resultado de uma tarefa
@@ -49,13 +60,42 @@ class KaluDashboard:
         Args:
             task_id: ID da tarefa
             resultado: Conteúdo do resultado (JSON string, texto, etc)
-            resultado_tipo: Tipo do resultado (json, text, file, image)
+            resultado_tipo: Tipo do resultado (json, text, file, image, html)
             resultado_url: URL opcional para ficheiro externo
+            generate_document: Se True, gera documento HTML formatado
+            task_title: Título para o documento gerado
             
         Returns:
             bool: True se sucesso, False caso contrário
         """
         try:
+            # Se generate_document = True, criar documento HTML
+            if generate_document and resultado_tipo == "json":
+                try:
+                    data = json.loads(resultado) if isinstance(resultado, str) else resultado
+                    
+                    # Gerar documento HTML
+                    html_path = generate_report(
+                        data=data,
+                        task_title=task_title,
+                        output_format="html",
+                        filename=f"task_{task_id}",
+                        output_dir="/tmp/kalu_reports"
+                    )
+                    
+                    # Ler conteúdo HTML
+                    with open(html_path, 'r', encoding='utf-8') as f:
+                        html_content = f.read()
+                    
+                    # Atualizar payload
+                    resultado = html_content
+                    resultado_tipo = "html"
+                    
+                    print(f"📄 Documento HTML gerado: {html_path}")
+                    
+                except Exception as e:
+                    print(f"⚠️ Erro ao gerar documento, usando JSON: {e}")
+            
             payload = {
                 "resultado": resultado,
                 "resultado_tipo": resultado_tipo
@@ -166,11 +206,13 @@ def heartbeat_check():
                 # Converter resultado para JSON string
                 result_json = json.dumps(result, ensure_ascii=False, indent=2)
                 
-                # Adicionar resultado à tarefa
+                # Adicionar resultado à tarefa (gera documento HTML automaticamente)
                 success = dashboard.add_task_result(
                     task_id=task['id'],
                     resultado=result_json,
-                    resultado_tipo="json"
+                    resultado_tipo="json",
+                    generate_document=True,
+                    task_title=task['titulo']
                 )
                 
                 if success:
