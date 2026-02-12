@@ -617,7 +617,16 @@ function App() {
             {selectedTask.resultado && (
               <div className="task-detail-section result-section">
                 <strong>✅ Resultado ({selectedTask.resultado_tipo}):</strong>
-                <pre>{selectedTask.resultado}</pre>
+                
+                {selectedTask.resultado_tipo === 'html' ? (
+                  <div 
+                    className="html-result" 
+                    dangerouslySetInnerHTML={{ __html: selectedTask.resultado }}
+                  />
+                ) : (
+                  <pre>{selectedTask.resultado}</pre>
+                )}
+                
                 {selectedTask.resultado_url && (
                   <a href={selectedTask.resultado_url} target="_blank" rel="noopener noreferrer">
                     🔗 Ver ficheiro

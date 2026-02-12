@@ -809,6 +809,41 @@ button:disabled {
   color: var(--text-light);
 }
 
+.html-result {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.html-result h1 {
+  color: var(--primary);
+  font-size: 1.5rem;
+  margin-top: 0;
+}
+
+.html-result h2 {
+  color: var(--text);
+  font-size: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.html-result h3 {
+  color: var(--text);
+  font-size: 1.1rem;
+  margin-top: 1rem;
+}
+
+.html-result ul {
+  padding-left: 1.5rem;
+}
+
+.html-result li {
+  margin: 0.5rem 0;
+}
+
 /* Login */
 .login-container {
   min-height: 100vh;
