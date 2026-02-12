@@ -29,6 +29,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [currentView, setCurrentView] = useState('dashboard');
   
   // Form state
   const [formData, setFormData] = useState({
@@ -69,6 +70,7 @@ function App() {
       setTasks(res.data);
     } catch (err) {
       console.error(err);
+      alert('Erro ao carregar tarefas. Verifica se o backend está online.');
     }
     setLoading(false);
   };
@@ -137,6 +139,7 @@ function App() {
     if (!window.confirm('Eliminar esta tarefa?')) return;
     try {
       await api.delete(`/tasks/${taskId}`);
+      setSelectedTask(null);
       fetchTasks();
       fetchStats();
     } catch (err) {
@@ -195,6 +198,8 @@ function App() {
     return acc;
   }, {});
 
+  const completedTasks = tasks.filter(t => t.status === 'Concluído');
+
   return (
     <div className="app">
       {/* Header */}
@@ -208,105 +213,336 @@ function App() {
         </div>
       </header>
 
-      {/* Stats */}
-      {stats && (
-        <div className="stats">
-          <div className="stat-card">
-            <h3>{stats.total_tasks}</h3>
-            <p>Total Tarefas</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.pendentes}</h3>
-            <p>Pendentes</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.em_progresso}</h3>
-            <p>Em Progresso</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.concluidas}</h3>
-            <p>Concluídas</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.taxa_conclusao}%</h3>
-            <p>Taxa Conclusão</p>
-          </div>
-        </div>
-      )}
+      <div className="main-layout">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <nav className="sidebar-nav">
+            <button
+              className={`nav-item ${currentView === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setCurrentView('dashboard')}
+            >
+              <span className="nav-icon">🏠</span>
+              Dashboard
+            </button>
+            <button
+              className={`nav-item ${currentView === 'kanban' ? 'active' : ''}`}
+              onClick={() => setCurrentView('kanban')}
+            >
+              <span className="nav-icon">📋</span>
+              Kanban
+            </button>
+            <button
+              className={`nav-item ${currentView === 'resultados' ? 'active' : ''}`}
+              onClick={() => setCurrentView('resultados')}
+            >
+              <span className="nav-icon">✅</span>
+              Resultados
+              {completedTasks.length > 0 && (
+                <span className="badge">{completedTasks.length}</span>
+              )}
+            </button>
+            <button
+              className={`nav-item ${currentView === 'empresas' ? 'active' : ''}`}
+              onClick={() => setCurrentView('empresas')}
+            >
+              <span className="nav-icon">🏢</span>
+              Empresas
+            </button>
+            <button
+              className={`nav-item ${currentView === 'config' ? 'active' : ''}`}
+              onClick={() => setCurrentView('config')}
+            >
+              <span className="nav-icon">⚙️</span>
+              Configurações
+            </button>
+          </nav>
+        </aside>
 
-      {/* Actions */}
-      <div className="actions">
-        <button onClick={() => setShowAddTask(true)} className="btn-primary">
-          ➕ Nova Tarefa
-        </button>
-        <button onClick={fetchTasks} className="btn-secondary">
-          🔄 Actualizar
-        </button>
-      </div>
-
-      {/* Kanban Board */}
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="kanban-board">
-          {Object.entries(COLUNAS).map(([status, config]) => (
-            <Droppable key={status} droppableId={status}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`kanban-column ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
-                >
-                  <div className="column-header" style={{ borderColor: config.color }}>
-                    <h3>{config.title}</h3>
-                    <span className="task-count">{tasksByStatus[status]?.length || 0}</span>
+        {/* Main Content */}
+        <main className="content">
+          {/* Dashboard View */}
+          {currentView === 'dashboard' && (
+            <div className="view-container">
+              <h2 className="view-title">🏠 Visão Geral</h2>
+              
+              {stats && (
+                <div className="stats">
+                  <div className="stat-card">
+                    <h3>{stats.total_tasks}</h3>
+                    <p>Total Tarefas</p>
                   </div>
-                  
-                  <div className="tasks-list">
-                    {tasksByStatus[status]?.map((task, index) => (
-                      <Draggable key={task.id} draggableId={String(task.id)} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`task-card ${snapshot.isDragging ? 'dragging' : ''}`}
-                            onClick={() => setSelectedTask(task)}
-                          >
-                            <div className="task-header">
-                              <h4>{task.titulo}</h4>
-                              <span
-                                className="priority-badge"
-                                style={{ background: getPriorityColor(task.prioridade) }}
-                              >
-                                {task.prioridade}
-                              </span>
-                            </div>
-                            
-                            {task.descricao && (
-                              <p className="task-description">{task.descricao}</p>
-                            )}
-                            
-                            <div className="task-footer">
-                              <span className="empresa-tag">{task.empresa}</span>
-                              <span className="assigned-to">👤 {task.assigned_to}</span>
-                            </div>
-                            
-                            {task.resultado && (
-                              <div className="task-result">
-                                ✅ Resultado disponível
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
+                  <div className="stat-card">
+                    <h3>{stats.pendentes}</h3>
+                    <p>Pendentes</p>
+                  </div>
+                  <div className="stat-card">
+                    <h3>{stats.em_progresso}</h3>
+                    <p>Em Progresso</p>
+                  </div>
+                  <div className="stat-card">
+                    <h3>{stats.concluidas}</h3>
+                    <p>Concluídas</p>
+                  </div>
+                  <div className="stat-card">
+                    <h3>{stats.taxa_conclusao}%</h3>
+                    <p>Taxa Conclusão</p>
                   </div>
                 </div>
               )}
-            </Droppable>
-          ))}
-        </div>
-      </DragDropContext>
+
+              <div className="actions">
+                <button onClick={() => setShowAddTask(true)} className="btn-primary">
+                  ➕ Nova Tarefa
+                </button>
+                <button onClick={() => { fetchTasks(); fetchStats(); }} className="btn-secondary">
+                  🔄 Actualizar
+                </button>
+              </div>
+
+              <div className="recent-activity">
+                <h3>📌 Actividade Recente</h3>
+                {tasks.slice(0, 5).map(task => (
+                  <div key={task.id} className="activity-item" onClick={() => setSelectedTask(task)}>
+                    <div className="activity-icon">
+                      {task.status === 'Concluído' ? '✅' : task.status === 'Em Progresso' ? '🔄' : '📋'}
+                    </div>
+                    <div className="activity-content">
+                      <strong>{task.titulo}</strong>
+                      <span>{task.empresa} • {task.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Kanban View */}
+          {currentView === 'kanban' && (
+            <div className="view-container">
+              <h2 className="view-title">📋 Gestão de Tarefas (Kanban)</h2>
+              
+              <div className="actions">
+                <button onClick={() => setShowAddTask(true)} className="btn-primary">
+                  ➕ Nova Tarefa
+                </button>
+                <button onClick={() => { fetchTasks(); fetchStats(); }} className="btn-secondary" disabled={loading}>
+                  🔄 {loading ? 'A actualizar...' : 'Actualizar'}
+                </button>
+              </div>
+
+              <DragDropContext onDragEnd={onDragEnd}>
+                <div className="kanban-board">
+                  {Object.entries(COLUNAS).map(([status, config]) => (
+                    <Droppable key={status} droppableId={status}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`kanban-column ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
+                        >
+                          <div className="column-header" style={{ borderColor: config.color }}>
+                            <h3>{config.title}</h3>
+                            <span className="task-count">{tasksByStatus[status]?.length || 0}</span>
+                          </div>
+                          
+                          <div className="tasks-list">
+                            {tasksByStatus[status]?.map((task, index) => (
+                              <Draggable key={task.id} draggableId={String(task.id)} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={`task-card ${snapshot.isDragging ? 'dragging' : ''}`}
+                                    onClick={() => setSelectedTask(task)}
+                                  >
+                                    <div className="task-header">
+                                      <h4>{task.titulo}</h4>
+                                      <span
+                                        className="priority-badge"
+                                        style={{ background: getPriorityColor(task.prioridade) }}
+                                      >
+                                        {task.prioridade}
+                                      </span>
+                                    </div>
+                                    
+                                    {task.descricao && (
+                                      <p className="task-description">{task.descricao}</p>
+                                    )}
+                                    
+                                    <div className="task-footer">
+                                      <span className="empresa-tag">{task.empresa}</span>
+                                      <span className="assigned-to">👤 {task.assigned_to}</span>
+                                    </div>
+                                    
+                                    {task.resultado && (
+                                      <div className="task-result">
+                                        ✅ Resultado disponível
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        </div>
+                      )}
+                    </Droppable>
+                  ))}
+                </div>
+              </DragDropContext>
+            </div>
+          )}
+
+          {/* Resultados View */}
+          {currentView === 'resultados' && (
+            <div className="view-container">
+              <h2 className="view-title">✅ Resultados das Tarefas</h2>
+              <p className="view-subtitle">Tarefas concluídas com resultados do Kalu</p>
+              
+              <div className="actions">
+                <button onClick={() => { fetchTasks(); fetchStats(); }} className="btn-secondary">
+                  🔄 Actualizar
+                </button>
+              </div>
+
+              {completedTasks.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">📭</div>
+                  <h3>Ainda sem resultados</h3>
+                  <p>Quando o Kalu concluir tarefas, os resultados aparecerão aqui.</p>
+                </div>
+              ) : (
+                <div className="results-grid">
+                  {completedTasks.map(task => (
+                    <div key={task.id} className="result-card" onClick={() => setSelectedTask(task)}>
+                      <div className="result-header">
+                        <h3>{task.titulo}</h3>
+                        <span className="result-date">
+                          {task.completado_em ? new Date(task.completado_em).toLocaleDateString('pt-PT') : 'N/A'}
+                        </span>
+                      </div>
+                      
+                      <div className="result-meta">
+                        <span className="result-empresa">{task.empresa}</span>
+                        <span className="result-priority" style={{ color: getPriorityColor(task.prioridade) }}>
+                          {task.prioridade}
+                        </span>
+                      </div>
+
+                      {task.resultado ? (
+                        <div className="result-preview">
+                          <strong>📄 Tipo:</strong> {task.resultado_tipo || 'text'}
+                          <div className="result-content">
+                            {task.resultado.substring(0, 150)}
+                            {task.resultado.length > 150 && '...'}
+                          </div>
+                          {task.resultado_url && (
+                            <a href={task.resultado_url} target="_blank" rel="noopener noreferrer" className="result-link">
+                              🔗 Ver ficheiro completo
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="result-empty">
+                          ⚠️ Sem resultado registado
+                        </div>
+                      )}
+
+                      <button className="result-view-btn">Ver Detalhes →</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Empresas View */}
+          {currentView === 'empresas' && (
+            <div className="view-container">
+              <h2 className="view-title">🏢 Gestão de Empresas</h2>
+              
+              <div className="empresas-grid">
+                {EMPRESAS.map(empresa => {
+                  const empresaTasks = tasks.filter(t => t.empresa === empresa);
+                  const concluidas = empresaTasks.filter(t => t.status === 'Concluído').length;
+                  const total = empresaTasks.length;
+                  
+                  return (
+                    <div key={empresa} className="empresa-card">
+                      <h3>{empresa}</h3>
+                      <div className="empresa-stats">
+                        <div className="empresa-stat">
+                          <span className="stat-value">{total}</span>
+                          <span className="stat-label">Tarefas</span>
+                        </div>
+                        <div className="empresa-stat">
+                          <span className="stat-value">{concluidas}</span>
+                          <span className="stat-label">Concluídas</span>
+                        </div>
+                        <div className="empresa-stat">
+                          <span className="stat-value">
+                            {total > 0 ? Math.round((concluidas / total) * 100) : 0}%
+                          </span>
+                          <span className="stat-label">Taxa</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Configurações View */}
+          {currentView === 'config' && (
+            <div className="view-container">
+              <h2 className="view-title">⚙️ Configurações</h2>
+              
+              <div className="config-section">
+                <h3>👤 Perfil</h3>
+                <div className="config-item">
+                  <label>Nome:</label>
+                  <span>{user?.full_name || 'N/A'}</span>
+                </div>
+                <div className="config-item">
+                  <label>Username:</label>
+                  <span>{user?.username}</span>
+                </div>
+                <div className="config-item">
+                  <label>Email:</label>
+                  <span>{user?.email}</span>
+                </div>
+              </div>
+
+              <div className="config-section">
+                <h3>🔗 Endpoints da API</h3>
+                <div className="config-item">
+                  <label>Backend URL:</label>
+                  <code>{API_URL}</code>
+                </div>
+                <div className="config-item">
+                  <label>Status:</label>
+                  <span className="status-badge online">🟢 Online</span>
+                </div>
+              </div>
+
+              <div className="config-section">
+                <h3>ℹ️ Informações do Sistema</h3>
+                <div className="config-item">
+                  <label>Versão:</label>
+                  <span>2.0.0</span>
+                </div>
+                <div className="config-item">
+                  <label>Desenvolvido por:</label>
+                  <span>Kalu AI Assistant ⚡</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
 
       {/* Modal: Add Task */}
       {showAddTask && (
@@ -359,7 +595,7 @@ function App() {
       {/* Modal: Task Details */}
       {selectedTask && (
         <div className="modal" onClick={() => setSelectedTask(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
             <h2>{selectedTask.titulo}</h2>
             
             <div className="task-detail-grid">
@@ -373,7 +609,7 @@ function App() {
             
             {selectedTask.descricao && (
               <div className="task-detail-section">
-                <strong>Descrição:</strong>
+                <strong>📝 Descrição:</strong>
                 <p>{selectedTask.descricao}</p>
               </div>
             )}
@@ -386,6 +622,11 @@ function App() {
                   <a href={selectedTask.resultado_url} target="_blank" rel="noopener noreferrer">
                     🔗 Ver ficheiro
                   </a>
+                )}
+                {selectedTask.completado_em && (
+                  <div className="result-timestamp">
+                    Concluído em: {new Date(selectedTask.completado_em).toLocaleString('pt-PT')}
+                  </div>
                 )}
               </div>
             )}
