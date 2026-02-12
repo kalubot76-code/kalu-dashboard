@@ -811,37 +811,105 @@ button:disabled {
 
 .html-result {
   background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
+  padding: 2rem;
+  border-radius: 12px;
   border: 1px solid var(--border);
-  max-height: 600px;
+  max-height: 70vh;
   overflow-y: auto;
+  box-shadow: var(--shadow);
+  line-height: 1.8;
+  font-size: 1rem;
 }
 
 .html-result h1 {
-  color: var(--primary);
-  font-size: 1.5rem;
-  margin-top: 0;
+  color: #1f77b4;
+  font-size: 2rem;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #1f77b4;
 }
 
 .html-result h2 {
-  color: var(--text);
-  font-size: 1.25rem;
-  margin-top: 1.5rem;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  margin: 2rem 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .html-result h3 {
-  color: var(--text);
-  font-size: 1.1rem;
-  margin-top: 1rem;
+  color: #34495e;
+  font-size: 1.25rem;
+  margin: 1.5rem 0 0.75rem 0;
+  font-weight: 600;
+}
+
+.html-result p {
+  margin: 1rem 0;
+  color: #333;
+  line-height: 1.8;
 }
 
 .html-result ul {
-  padding-left: 1.5rem;
+  padding-left: 2rem;
+  margin: 1rem 0;
 }
 
 .html-result li {
-  margin: 0.5rem 0;
+  margin: 0.75rem 0;
+  color: #444;
+  line-height: 1.7;
+}
+
+.html-result strong {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.html-result hr {
+  border: none;
+  border-top: 2px solid #e0e0e0;
+  margin: 2rem 0;
+}
+
+.html-result em {
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+.html-result code {
+  background: #f5f7fa;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+.html-result pre {
+  background: #f5f7fa;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+/* Melhorar scrollbar */
+.html-result::-webkit-scrollbar {
+  width: 8px;
+}
+
+.html-result::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.html-result::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.html-result::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 /* Login */
