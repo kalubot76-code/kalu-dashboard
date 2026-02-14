@@ -324,7 +324,7 @@ async def create_activity(
     actor: str = "Kalu",
     target_id: int = None,
     target_type: str = None,
-    metadata: str = None,
+    extra_data: str = None,
     icon: str = "📌",
     db: Session = Depends(database.get_db)
 ):
@@ -336,7 +336,7 @@ async def create_activity(
         actor=actor,
         target_id=target_id,
         target_type=target_type,
-        metadata=metadata,
+        extra_data=extra_data,
         icon=icon
     )
     db.add(activity)

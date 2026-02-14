@@ -59,7 +59,7 @@ class Activity(Base):
     actor = Column(String, default="Kalu")  # quem fez a ação
     target_id = Column(Integer)  # ID da entidade relacionada (task, doc, etc.)
     target_type = Column(String)  # 'task', 'document', 'memory'
-    metadata = Column(Text)  # JSON com dados adicionais
+    extra_data = Column(Text)  # JSON com dados adicionais
     created_at = Column(DateTime, default=datetime.utcnow)
     icon = Column(String, default="📌")  # emoji para o feed
 

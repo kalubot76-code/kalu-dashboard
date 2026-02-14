@@ -35,7 +35,7 @@ class KaluDashboard:
         actor: str = "Kalu",
         target_id: int = None,
         target_type: str = None,
-        metadata: str = None,
+        extra_data: str = None,
         icon: str = "📌"
     ) -> bool:
         """
@@ -48,7 +48,7 @@ class KaluDashboard:
             actor: Quem executou (padrão: Kalu)
             target_id: ID da entidade relacionada
             target_type: Tipo da entidade (task, document, memory)
-            metadata: JSON com dados adicionais
+            extra_data: JSON com dados adicionais
             icon: Emoji para o feed
             
         Returns:
@@ -62,7 +62,7 @@ class KaluDashboard:
                 "actor": actor,
                 "target_id": target_id,
                 "target_type": target_type,
-                "metadata": metadata,
+                "extra_data": extra_data,
                 "icon": icon
             }
             

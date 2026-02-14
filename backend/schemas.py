@@ -76,7 +76,7 @@ class ActivityBase(BaseModel):
     actor: str = "Kalu"
     target_id: Optional[int] = None
     target_type: Optional[str] = None
-    metadata: Optional[str] = None
+    extra_data: Optional[str] = None
     icon: str = "📌"
 
 class Activity(ActivityBase):
