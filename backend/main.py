@@ -162,6 +162,7 @@ async def get_task(
     return task
 
 @app.put("/tasks/{task_id}", response_model=schemas.Task)
+@app.patch("/tasks/{task_id}", response_model=schemas.Task)
 async def update_task(
     task_id: int,
     task_update: schemas.TaskUpdate,
@@ -177,6 +178,11 @@ async def update_task(
         setattr(task, field, value)
     
     task.updated_at = datetime.utcnow()
+    
+    # Se mudou para "Concluído", marcar data de conclusão
+    if task_update.status == "Concluído" and not task.completado_em:
+        task.completado_em = datetime.utcnow()
+    
     db.commit()
     db.refresh(task)
     return task
