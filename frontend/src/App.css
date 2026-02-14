@@ -1498,3 +1498,359 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gray);
 }
+
+/* ============================================
+   KANBAN BOARD STYLES
+   ============================================ */
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  padding: 1rem 0;
+  min-height: 70vh;
+}
+
+.kanban-column {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.kanban-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--bg);
+}
+
+.kanban-column-header h3 {
+  font-size: 1.1rem;
+  color: var(--dark);
+}
+
+.task-count {
+  background: var(--primary);
+  color: var(--white);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.kanban-column-content {
+  min-height: 500px;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.kanban-column-content.dragging-over {
+  background: rgba(59, 130, 246, 0.05);
+  border: 2px dashed var(--primary);
+}
+
+.kanban-card {
+  background: var(--white);
+  border: 1px solid var(--light-gray);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  cursor: grab;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.kanban-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.kanban-card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.kanban-card h4 {
+  font-size: 1rem;
+  color: var(--dark);
+  margin-bottom: 0.5rem;
+}
+
+.kanban-card-desc {
+  font-size: 0.875rem;
+  color: var(--gray);
+  margin-bottom: 0.75rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.kanban-card-footer {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.kanban-card-result {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--success);
+  text-align: center;
+}
+
+/* ============================================
+   TASK DETAILS MODAL
+   ============================================ */
+
+.modal-large {
+  max-width: 800px !important;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.task-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--bg);
+}
+
+.task-details-header h2 {
+  font-size: 1.5rem;
+  color: var(--dark);
+  flex: 1;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--gray);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: var(--transition);
+}
+
+.btn-close:hover {
+  color: var(--dark);
+}
+
+.task-details-body {
+  padding: 1rem 0;
+}
+
+.task-details-section {
+  margin-bottom: 1.5rem;
+}
+
+.task-details-section label {
+  display: block;
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.task-details-section p {
+  color: var(--gray);
+  line-height: 1.6;
+}
+
+.task-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.task-result-preview {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.html-result {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.html-result h1,
+.html-result h2,
+.html-result h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--dark);
+}
+
+.html-result p {
+  margin-bottom: 0.75rem;
+}
+
+.html-result ul,
+.html-result ol {
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.json-result {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: var(--dark);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.task-details-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--bg);
+}
+
+/* ============================================
+   CALENDAR VIEW
+   ============================================ */
+
+.calendar-view {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.calendar-upcoming {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.calendar-upcoming h2 {
+  font-size: 1.25rem;
+  color: var(--dark);
+  margin-bottom: 1.5rem;
+}
+
+.calendar-task-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.calendar-task-item:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}
+
+.calendar-date {
+  background: var(--primary);
+  color: var(--white);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.calendar-task-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.calendar-task-info strong {
+  color: var(--dark);
+}
+
+.calendar-stats {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  height: fit-content;
+}
+
+.calendar-stats h3 {
+  font-size: 1.1rem;
+  color: var(--dark);
+  margin-bottom: 1.5rem;
+}
+
+.stat-mini {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--bg);
+}
+
+.stat-mini:last-child {
+  border-bottom: none;
+}
+
+.stat-mini span {
+  color: var(--gray);
+  font-size: 0.875rem;
+}
+
+.stat-mini strong {
+  color: var(--dark);
+  font-size: 1.25rem;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.result-badge {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .kanban-board {
+    grid-template-columns: 1fr;
+  }
+  
+  .task-details-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .calendar-view {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-large {
+    max-width: 95vw;
+    margin: 1rem;
+  }
+}

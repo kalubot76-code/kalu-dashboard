@@ -55,20 +55,27 @@ class KaluDashboard:
             bool: True se sucesso
         """
         try:
-            payload = {
+            # Criar query params apenas com campos não-nulos
+            params = {
                 "tipo": tipo,
                 "titulo": titulo,
-                "descricao": descricao,
                 "actor": actor,
-                "target_id": target_id,
-                "target_type": target_type,
-                "extra_data": extra_data,
                 "icon": icon
             }
             
+            # Adicionar campos opcionais apenas se tiverem valor
+            if descricao:
+                params["descricao"] = descricao
+            if target_id is not None:
+                params["target_id"] = target_id
+            if target_type:
+                params["target_type"] = target_type
+            if extra_data:
+                params["extra_data"] = extra_data
+            
             response = requests.post(
                 f"{self.api_url}/activities/",
-                json=payload,
+                params=params,
                 timeout=10
             )
             response.raise_for_status()
@@ -136,7 +143,7 @@ class KaluDashboard:
                     resultado = html_content
                     resultado_tipo = "html"
                     
-                    print(f"📄 Documento HTML gerado: {html_path}")
+                    print(f"📄 Documento HTML gerado com sucesso")
                     
                 except Exception as e:
                     print(f"⚠️ Erro ao gerar documento, usando JSON: {e}")

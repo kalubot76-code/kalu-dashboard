@@ -14,8 +14,6 @@ const EMPRESAS = [
   "Linha & Corpo"
 ];
 
-const STATUSES = ['Pendente', 'Em Progresso', 'Concluído'];
-
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
@@ -29,16 +27,13 @@ function App() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [showAddDoc, setShowAddDoc] = useState(false);
   const [showAddMemory, setShowAddMemory] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null); // ✅ Estado para task selecionada
   
   const [formData, setFormData] = useState({
     titulo: '',
     descricao: '',
     empresa: EMPRESAS[0],
     prioridade: 'Média',
-    status: 'Pendente',
-    assigned_to: 'Kalu',
-    created_by: 'Oscar'
+    status: 'Pendente'
   });
   
   const [docFormData, setDocFormData] = useState({
@@ -60,13 +55,15 @@ function App() {
     password: ''
   });
 
+  // ✅ FIX: Criar axios instance que atualiza quando token muda
   const api = useMemo(() => {
     return axios.create({
       baseURL: API_URL,
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
-  }, [token]);
+  }, [token]);  // ← Recria quando token muda!
 
+  // ✅ FIX: Salvar token no localStorage quando muda
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
@@ -75,6 +72,7 @@ function App() {
     }
   }, [token]);
 
+  // Fetch data quando token existe
   useEffect(() => {
     if (token) {
       fetchUser();
@@ -84,14 +82,14 @@ function App() {
       fetchDocuments();
       fetchMemories();
       
+      // Polling para activity feed a cada 30s
       const interval = setInterval(() => {
         fetchActivities();
-        fetchTasks(); // ✅ Atualizar tarefas também
       }, 30000);
       
       return () => clearInterval(interval);
     }
-  }, [token]);
+  }, [token]);  // ← Refetch quando token muda
 
   const fetchUser = async () => {
     try {
@@ -100,6 +98,7 @@ function App() {
     } catch (err) {
       console.error('Erro ao buscar utilizador:', err);
       if (err.response?.status === 401) {
+        // Token inválido, fazer logout
         logout();
       }
     }
@@ -185,9 +184,7 @@ function App() {
         descricao: '',
         empresa: EMPRESAS[0],
         prioridade: 'Média',
-        status: 'Pendente',
-        assigned_to: 'Kalu',
-        created_by: 'Oscar'
+        status: 'Pendente'
       });
       setShowAddTask(false);
       fetchTasks();
@@ -246,47 +243,6 @@ function App() {
     }
   };
 
-  // ✅ NOVO: Handler para drag-and-drop do Kanban
-  const handleDragEnd = async (result) => {
-    if (!result.destination) return;
-
-    const { source, destination, draggableId } = result;
-    
-    // Se não mudou de coluna, não faz nada
-    if (source.droppableId === destination.droppableId) return;
-
-    const taskId = parseInt(draggableId);
-    const newStatus = destination.droppableId;
-
-    try {
-      // Atualizar no backend
-      await api.patch(`/tasks/${taskId}`, { status: newStatus });
-      
-      // Atualizar local
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task.id === taskId ? { ...task, status: newStatus } : task
-        )
-      );
-      
-      fetchStats();
-      fetchActivities();
-    } catch (err) {
-      alert('Erro ao atualizar tarefa');
-      console.error(err);
-    }
-  };
-
-  // ✅ NOVO: Abrir task details
-  const openTaskDetails = (task) => {
-    setSelectedTask(task);
-  };
-
-  // ✅ NOVO: Fechar task details
-  const closeTaskDetails = () => {
-    setSelectedTask(null);
-  };
-
   // Login Screen
   if (!token) {
     return (
@@ -342,12 +298,6 @@ function App() {
               onClick={() => setView('tasks')}
             >
               📝 Tasks
-            </button>
-            <button 
-              className={view === 'kanban' ? 'active' : ''}
-              onClick={() => setView('kanban')}
-            >
-              🎯 Kanban
             </button>
             <button 
               className={view === 'calendar' ? 'active' : ''}
@@ -444,17 +394,12 @@ function App() {
             <div className="recent-tasks">
               <h2>Tarefas Recentes</h2>
               {tasks.slice(0, 5).map(task => (
-                <div 
-                  key={task.id} 
-                  className="task-item-mini"
-                  onClick={() => openTaskDetails(task)}
-                  style={{cursor: 'pointer'}}
-                >
+                <div key={task.id} className="task-item-mini">
                   <div>
                     <strong>{task.titulo}</strong>
                     <span className="task-meta"> • {task.empresa} • {task.prioridade}</span>
                   </div>
-                  <span className={`status-badge status-${task.status.toLowerCase().replace(' ', '-')}`}>
+                  <span className={`status-badge status-${task.status.toLowerCase()}`}>
                     {task.status}
                   </span>
                 </div>
@@ -509,12 +454,6 @@ function App() {
                       <option value="Média">Média</option>
                       <option value="Alta">Alta</option>
                     </select>
-                    <input
-                      type="text"
-                      placeholder="Assignado a (opcional)"
-                      value={formData.assigned_to}
-                      onChange={(e) => setFormData({...formData, assigned_to: e.target.value})}
-                    />
                     <div className="modal-actions">
                       <button type="button" onClick={() => setShowAddTask(false)}>
                         Cancelar
@@ -530,20 +469,12 @@ function App() {
             
             <div className="tasks-list">
               {tasks.map(task => (
-                <div 
-                  key={task.id} 
-                  className="task-card"
-                  onClick={() => openTaskDetails(task)}
-                  style={{cursor: 'pointer'}}
-                >
+                <div key={task.id} className="task-card">
                   <div className="task-card-header">
                     <h3>{task.titulo}</h3>
                     <button 
                       className="btn-delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteTask(task.id);
-                      }}
+                      onClick={() => deleteTask(task.id)}
                     >
                       🗑️
                     </button>
@@ -554,91 +485,13 @@ function App() {
                     <span className={`priority-badge priority-${task.prioridade.toLowerCase()}`}>
                       {task.prioridade}
                     </span>
-                    <span className={`status-badge status-${task.status.toLowerCase().replace(' ', '-')}`}>
+                    <span className={`status-badge status-${task.status.toLowerCase()}`}>
                       {task.status}
                     </span>
-                    {task.resultado && (
-                      <span className="result-badge">📄 Resultado</span>
-                    )}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* ✅ NOVO: Kanban View */}
-        {view === 'kanban' && (
-          <div className="view-container">
-            <div className="view-header">
-              <h1>🎯 Kanban Board</h1>
-              <button 
-                className="btn-primary"
-                onClick={() => setShowAddTask(true)}
-              >
-                + Nova Tarefa
-              </button>
-            </div>
-            
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <div className="kanban-board">
-                {STATUSES.map(status => (
-                  <div key={status} className="kanban-column">
-                    <div className="kanban-column-header">
-                      <h3>{status}</h3>
-                      <span className="task-count">
-                        {tasks.filter(t => t.status === status).length}
-                      </span>
-                    </div>
-                    
-                    <Droppable droppableId={status}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={`kanban-column-content ${snapshot.isDraggingOver ? 'dragging-over' : ''}`}
-                        >
-                          {tasks
-                            .filter(task => task.status === status)
-                            .map((task, index) => (
-                              <Draggable
-                                key={task.id}
-                                draggableId={String(task.id)}
-                                index={index}
-                              >
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                    className={`kanban-card ${snapshot.isDragging ? 'dragging' : ''}`}
-                                    onClick={() => openTaskDetails(task)}
-                                  >
-                                    <h4>{task.titulo}</h4>
-                                    <p className="kanban-card-desc">{task.descricao}</p>
-                                    <div className="kanban-card-footer">
-                                      <span className="task-badge">{task.empresa}</span>
-                                      <span className={`priority-badge priority-${task.prioridade.toLowerCase()}`}>
-                                        {task.prioridade}
-                                      </span>
-                                    </div>
-                                    {task.resultado && (
-                                      <div className="kanban-card-result">
-                                        📄 Tem resultado
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  </div>
-                ))}
-              </div>
-            </DragDropContext>
           </div>
         )}
 
@@ -824,62 +677,6 @@ function App() {
           </div>
         )}
 
-        {/* ✅ NOVO: Calendar View */}
-        {view === 'calendar' && (
-          <div className="view-container">
-            <h1>📅 Calendário de Tarefas</h1>
-            
-            <div className="calendar-view">
-              <div className="calendar-upcoming">
-                <h2>Próximas Tarefas</h2>
-                {tasks
-                  .filter(t => t.deadline)
-                  .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
-                  .map(task => (
-                    <div 
-                      key={task.id} 
-                      className="calendar-task-item"
-                      onClick={() => openTaskDetails(task)}
-                    >
-                      <div className="calendar-date">
-                        {new Date(task.deadline).toLocaleDateString('pt')}
-                      </div>
-                      <div className="calendar-task-info">
-                        <strong>{task.titulo}</strong>
-                        <span className="task-badge">{task.empresa}</span>
-                      </div>
-                      <span className={`status-badge status-${task.status.toLowerCase().replace(' ', '-')}`}>
-                        {task.status}
-                      </span>
-                    </div>
-                  ))}
-                
-                {tasks.filter(t => t.deadline).length === 0 && (
-                  <div className="empty-state">
-                    <p>📅 Nenhuma tarefa com deadline definido</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="calendar-stats">
-                <h3>Esta Semana</h3>
-                <div className="stat-mini">
-                  <span>Pendentes</span>
-                  <strong>{tasks.filter(t => t.status === 'Pendente').length}</strong>
-                </div>
-                <div className="stat-mini">
-                  <span>Em Progresso</span>
-                  <strong>{tasks.filter(t => t.status === 'Em Progresso').length}</strong>
-                </div>
-                <div className="stat-mini">
-                  <span>Concluídas</span>
-                  <strong>{tasks.filter(t => t.status === 'Concluído').length}</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Projects View */}
         {view === 'projects' && (
           <div className="view-container">
@@ -919,7 +716,14 @@ function App() {
           </div>
         )}
 
-        {/* Empresas View */}
+        {/* Placeholder views */}
+        {view === 'calendar' && (
+          <div className="view-container">
+            <h1>📅 Calendário</h1>
+            <p className="empty-state">Calendário em desenvolvimento...</p>
+          </div>
+        )}
+
         {view === 'empresas' && (
           <div className="view-container">
             <h1>🏢 Empresas</h1>
@@ -950,93 +754,6 @@ function App() {
           )}
         </div>
       </div>
-
-      {/* ✅ NOVO: Task Details Modal */}
-      {selectedTask && (
-        <div className="modal-overlay" onClick={closeTaskDetails}>
-          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-            <div className="task-details-header">
-              <h2>{selectedTask.titulo}</h2>
-              <button className="btn-close" onClick={closeTaskDetails}>✕</button>
-            </div>
-            
-            <div className="task-details-body">
-              <div className="task-details-section">
-                <label>📝 Descrição</label>
-                <p>{selectedTask.descricao || 'Sem descrição'}</p>
-              </div>
-              
-              <div className="task-details-grid">
-                <div className="task-details-section">
-                  <label>🏢 Empresa</label>
-                  <span className="task-badge">{selectedTask.empresa}</span>
-                </div>
-                
-                <div className="task-details-section">
-                  <label>⚡ Prioridade</label>
-                  <span className={`priority-badge priority-${selectedTask.prioridade.toLowerCase()}`}>
-                    {selectedTask.prioridade}
-                  </span>
-                </div>
-                
-                <div className="task-details-section">
-                  <label>📊 Status</label>
-                  <span className={`status-badge status-${selectedTask.status.toLowerCase().replace(' ', '-')}`}>
-                    {selectedTask.status}
-                  </span>
-                </div>
-                
-                <div className="task-details-section">
-                  <label>👤 Assignado</label>
-                  <span>{selectedTask.assigned_to || 'N/A'}</span>
-                </div>
-              </div>
-              
-              {selectedTask.resultado && (
-                <div className="task-details-section">
-                  <label>📄 Resultado</label>
-                  <div className="task-result-preview">
-                    {selectedTask.resultado_tipo === 'html' ? (
-                      <div 
-                        className="html-result"
-                        dangerouslySetInnerHTML={{ __html: selectedTask.resultado }}
-                      />
-                    ) : selectedTask.resultado_tipo === 'json' ? (
-                      <pre className="json-result">
-                        {JSON.stringify(JSON.parse(selectedTask.resultado), null, 2)}
-                      </pre>
-                    ) : (
-                      <p>{selectedTask.resultado}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              {selectedTask.completado_em && (
-                <div className="task-details-section">
-                  <label>✅ Concluído em</label>
-                  <span>{new Date(selectedTask.completado_em).toLocaleString('pt')}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="task-details-footer">
-              <button 
-                className="btn-delete"
-                onClick={() => {
-                  deleteTask(selectedTask.id);
-                  closeTaskDetails();
-                }}
-              >
-                🗑️ Eliminar
-              </button>
-              <button className="btn-primary" onClick={closeTaskDetails}>
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
