@@ -36,19 +36,24 @@ app.add_middleware(
 def create_default_user():
     db = database.SessionLocal()
     try:
-        # Verificar se já existe
+        # Apagar utilizador existente se houver (para garantir hash correcto)
         existing = db.query(database.User).filter(database.User.username == "Oscar").first()
-        if not existing:
-            user = database.User(
-                username="Oscar",
-                email="oscar@tripleo.ao",
-                full_name="Oscar Bento",
-                hashed_password=auth.get_password_hash("Kalu2026"),
-                is_active=True
-            )
-            db.add(user)
+        if existing:
+            db.delete(existing)
             db.commit()
-            print("✅ Utilizador padrão criado: Oscar / Kalu2026")
+            print("🔄 Utilizador Oscar existente removido para recriação")
+        
+        # Criar utilizador com password correcta
+        user = database.User(
+            username="Oscar",
+            email="oscar@tripleo.ao",
+            full_name="Oscar Bento",
+            hashed_password=auth.get_password_hash("Kalu2026"),
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        print("✅ Utilizador padrão criado: Oscar / Kalu2026")
     finally:
         db.close()
 
