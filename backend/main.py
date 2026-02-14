@@ -36,12 +36,10 @@ app.add_middleware(
 def create_default_user():
     db = database.SessionLocal()
     try:
-        # Apagar utilizador existente se houver (para garantir hash correcto)
-        existing = db.query(database.User).filter(database.User.username == "Oscar").first()
-        if existing:
-            db.delete(existing)
-            db.commit()
-            print("🔄 Utilizador Oscar existente removido para recriação")
+        # Apagar TODOS os utilizadores para garantir recriação limpa
+        db.query(database.User).delete()
+        db.commit()
+        print("🔄 Base de dados de utilizadores limpa")
         
         # Criar utilizador com password correcta
         user = database.User(
@@ -54,6 +52,27 @@ def create_default_user():
         db.add(user)
         db.commit()
         print("✅ Utilizador padrão criado: Oscar / Kalu2026")
+    except Exception as e:
+        print(f"❌ Erro ao criar utilizador: {e}")
+        print("🔄 A tentar recriar base de dados...")
+        # Se falhar, recriar tabelas completamente
+        try:
+            database.Base.metadata.drop_all(bind=database.engine)
+            database.Base.metadata.create_all(bind=database.engine)
+            db = database.SessionLocal()
+            user = database.User(
+                username="Oscar",
+                email="oscar@tripleo.ao",
+                full_name="Oscar Bento",
+                hashed_password=auth.get_password_hash("Kalu2026"),
+                is_active=True
+            )
+            db.add(user)
+            db.commit()
+            print("✅ Base de dados recriada e utilizador criado")
+        except Exception as e2:
+            print(f"❌❌ ERRO CRÍTICO: {e2}")
+            raise
     finally:
         db.close()
 
