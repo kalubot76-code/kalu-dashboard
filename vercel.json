@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "name": "kalu-dashboard",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "https://kalu-dashboard-api.onrender.com"
+  },
+  "build": {
+    "env": {
+      "REACT_APP_API_URL": "https://kalu-dashboard-api.onrender.com"
+    }
+  }
+}
