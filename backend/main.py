@@ -314,6 +314,319 @@ async def download_task_document(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao gerar documento: {str(e)}")
 
+# ==================== ACTIVITY FEED ENDPOINTS ====================
+
+@app.post("/activities/", status_code=status.HTTP_201_CREATED)
+async def create_activity(
+    tipo: str,
+    titulo: str,
+    descricao: str = None,
+    actor: str = "Kalu",
+    target_id: int = None,
+    target_type: str = None,
+    metadata: str = None,
+    icon: str = "📌",
+    db: Session = Depends(database.get_db)
+):
+    """Criar nova entrada no Activity Feed"""
+    activity = database.Activity(
+        tipo=tipo,
+        titulo=titulo,
+        descricao=descricao,
+        actor=actor,
+        target_id=target_id,
+        target_type=target_type,
+        metadata=metadata,
+        icon=icon
+    )
+    db.add(activity)
+    db.commit()
+    db.refresh(activity)
+    return activity
+
+@app.get("/activities/")
+async def list_activities(
+    skip: int = 0,
+    limit: int = 50,
+    tipo: str = None,
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_active_user)
+):
+    """Listar actividades (com filtros opcionais)"""
+    query = db.query(database.Activity)
+    
+    if tipo:
+        query = query.filter(database.Activity.tipo == tipo)
+    
+    activities = query.order_by(database.Activity.created_at.desc()).offset(skip).limit(limit).all()
+    return activities
+
+@app.get("/activities/recent")
+async def get_recent_activities(
+    limit: int = 20,
+    db: Session = Depends(database.get_db)
+):
+    """Actividades recentes (sem autenticação - para widgets)"""
+    activities = db.query(database.Activity).order_by(
+        database.Activity.created_at.desc()
+    ).limit(limit).all()
+    return activities
+
+# ==================== DOCUMENTS ENDPOINTS ====================
+
+@app.post("/documents/", status_code=status.HTTP_201_CREATED)
+async def create_document(
+    titulo: str,
+    tipo: str,
+    conteudo: str = None,
+    descricao: str = None,
+    empresa: str = None,
+    projeto: str = None,
+    task_id: int = None,
+    tags: str = None,
+    versao: str = "v1",
+    created_by: str = "Kalu",
+    db: Session = Depends(database.get_db)
+):
+    """Criar novo documento/deliverable"""
+    document = database.Document(
+        titulo=titulo,
+        tipo=tipo,
+        conteudo=conteudo,
+        descricao=descricao,
+        empresa=empresa,
+        projeto=projeto,
+        task_id=task_id,
+        tags=tags,
+        versao=versao,
+        created_by=created_by,
+        file_size=len(conteudo) if conteudo else 0
+    )
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+    
+    # Registar no Activity Feed
+    activity = database.Activity(
+        tipo="document_created",
+        titulo=f"Documento criado: {titulo}",
+        descricao=f"Tipo: {tipo} | Projeto: {projeto or 'N/A'}",
+        actor=created_by,
+        target_id=document.id,
+        target_type="document",
+        icon="📄"
+    )
+    db.add(activity)
+    db.commit()
+    
+    return document
+
+@app.get("/documents/")
+async def list_documents(
+    skip: int = 0,
+    limit: int = 100,
+    tipo: str = None,
+    empresa: str = None,
+    projeto: str = None,
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_active_user)
+):
+    """Listar documentos com filtros"""
+    query = db.query(database.Document)
+    
+    if tipo:
+        query = query.filter(database.Document.tipo == tipo)
+    if empresa:
+        query = query.filter(database.Document.empresa == empresa)
+    if projeto:
+        query = query.filter(database.Document.projeto == projeto)
+    
+    documents = query.order_by(database.Document.created_at.desc()).offset(skip).limit(limit).all()
+    return documents
+
+@app.get("/documents/{doc_id}")
+async def get_document(
+    doc_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_active_user)
+):
+    """Obter documento específico"""
+    doc = db.query(database.Document).filter(database.Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento não encontrado")
+    return doc
+
+@app.delete("/documents/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_document(
+    doc_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_active_user)
+):
+    """Eliminar documento"""
+    doc = db.query(database.Document).filter(database.Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento não encontrado")
+    
+    db.delete(doc)
+    db.commit()
+    return None
+
+# ==================== MEMORY ENDPOINTS ====================
+
+@app.post("/memories/", status_code=status.HTTP_201_CREATED)
+async def create_memory(
+    tipo: str,
+    titulo: str,
+    conteudo: str,
+    categoria: str = None,
+    importancia: str = "normal",
+    empresa: str = None,
+    tags: str = None,
+    db: Session = Depends(database.get_db)
+):
+    """Criar nova memória/contexto"""
+    memory = database.Memory(
+        tipo=tipo,
+        titulo=titulo,
+        conteudo=conteudo,
+        categoria=categoria,
+        importancia=importancia,
+        empresa=empresa,
+        tags=tags
+    )
+    db.add(memory)
+    db.commit()
+    db.refresh(memory)
+    
+    # Registar no Activity Feed
+    activity = database.Activity(
+        tipo="memory_created",
+        titulo=f"Memória registada: {titulo}",
+        descricao=f"Tipo: {tipo} | Importância: {importancia}",
+        actor="Kalu",
+        target_id=memory.id,
+        target_type="memory",
+        icon="🧠"
+    )
+    db.add(activity)
+    db.commit()
+    
+    return memory
+
+@app.get("/memories/")
+async def list_memories(
+    skip: int = 0,
+    limit: int = 100,
+    tipo: str = None,
+    categoria: str = None,
+    importancia: str = None,
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_active_user)
+):
+    """Listar memórias com filtros"""
+    query = db.query(database.Memory)
+    
+    if tipo:
+        query = query.filter(database.Memory.tipo == tipo)
+    if categoria:
+        query = query.filter(database.Memory.categoria == categoria)
+    if importancia:
+        query = query.filter(database.Memory.importancia == importancia)
+    
+    memories = query.order_by(database.Memory.created_at.desc()).offset(skip).limit(limit).all()
+    return memories
+
+@app.get("/memories/search")
+async def search_memories(
+    q: str,
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_active_user)
+):
+    """Buscar memórias por texto"""
+    from sqlalchemy import or_
+    
+    memories = db.query(database.Memory).filter(
+        or_(
+            database.Memory.titulo.contains(q),
+            database.Memory.conteudo.contains(q),
+            database.Memory.tags.contains(q)
+        )
+    ).order_by(database.Memory.importancia.desc(), database.Memory.created_at.desc()).all()
+    
+    return memories
+
+# ==================== CALENDAR ENDPOINTS ====================
+
+@app.post("/calendar/", status_code=status.HTTP_201_CREATED)
+async def create_calendar_event(
+    titulo: str,
+    start_date: datetime,
+    tipo: str = "task",
+    descricao: str = None,
+    end_date: datetime = None,
+    all_day: bool = False,
+    empresa: str = None,
+    task_id: int = None,
+    recorrente: bool = False,
+    recorrencia: str = None,
+    cor: str = "#3b82f6",
+    db: Session = Depends(database.get_db)
+):
+    """Criar evento no calendário"""
+    event = database.CalendarEvent(
+        titulo=titulo,
+        start_date=start_date,
+        tipo=tipo,
+        descricao=descricao,
+        end_date=end_date,
+        all_day=all_day,
+        empresa=empresa,
+        task_id=task_id,
+        recorrente=recorrente,
+        recorrencia=recorrencia,
+        cor=cor
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
+
+@app.get("/calendar/")
+async def list_calendar_events(
+    start: datetime = None,
+    end: datetime = None,
+    tipo: str = None,
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_active_user)
+):
+    """Listar eventos do calendário (com range de datas)"""
+    query = db.query(database.CalendarEvent)
+    
+    if start:
+        query = query.filter(database.CalendarEvent.start_date >= start)
+    if end:
+        query = query.filter(database.CalendarEvent.start_date <= end)
+    if tipo:
+        query = query.filter(database.CalendarEvent.tipo == tipo)
+    
+    events = query.order_by(database.CalendarEvent.start_date.asc()).all()
+    return events
+
+@app.delete("/calendar/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_calendar_event(
+    event_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: database.User = Depends(auth.get_current_active_user)
+):
+    """Eliminar evento do calendário"""
+    event = db.query(database.CalendarEvent).filter(database.CalendarEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Evento não encontrado")
+    
+    db.delete(event)
+    db.commit()
+    return None
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/")
@@ -322,7 +635,14 @@ async def root():
         "app": "Kalu Dashboard API",
         "version": "2.0.0",
         "status": "operational",
-        "message": "API pronta para uso ⚡"
+        "message": "API pronta para uso ⚡",
+        "features": [
+            "Tasks Management",
+            "Activity Feed",
+            "Documents Library",
+            "Memory System",
+            "Calendar Events"
+        ]
     }
 
 @app.get("/health")

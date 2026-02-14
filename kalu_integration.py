@@ -26,6 +26,56 @@ class KaluDashboard:
     
     def __init__(self, api_url: str = API_URL):
         self.api_url = api_url.rstrip('/')
+    
+    def log_activity(
+        self,
+        tipo: str,
+        titulo: str,
+        descricao: str = None,
+        actor: str = "Kalu",
+        target_id: int = None,
+        target_type: str = None,
+        metadata: str = None,
+        icon: str = "📌"
+    ) -> bool:
+        """
+        Regista uma atividade no Activity Feed
+        
+        Args:
+            tipo: Tipo de atividade (task_created, document_generated, etc.)
+            titulo: Título da atividade
+            descricao: Descrição opcional
+            actor: Quem executou (padrão: Kalu)
+            target_id: ID da entidade relacionada
+            target_type: Tipo da entidade (task, document, memory)
+            metadata: JSON com dados adicionais
+            icon: Emoji para o feed
+            
+        Returns:
+            bool: True se sucesso
+        """
+        try:
+            payload = {
+                "tipo": tipo,
+                "titulo": titulo,
+                "descricao": descricao,
+                "actor": actor,
+                "target_id": target_id,
+                "target_type": target_type,
+                "metadata": metadata,
+                "icon": icon
+            }
+            
+            response = requests.post(
+                f"{self.api_url}/activities/",
+                json=payload,
+                timeout=10
+            )
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            print(f"⚠️ Erro ao registar atividade: {e}")
+            return False
         
     def get_pending_tasks(self) -> List[Dict]:
         """
@@ -105,6 +155,18 @@ class KaluDashboard:
             )
             response.raise_for_status()
             print(f"✅ Resultado adicionado à tarefa #{task_id}")
+            
+            # Registar no Activity Feed
+            self.log_activity(
+                tipo="task_completed",
+                titulo=f"Tarefa concluída: {task_title}",
+                descricao=f"Tipo de resultado: {resultado_tipo}",
+                actor="Kalu",
+                target_id=task_id,
+                target_type="task",
+                icon="✅"
+            )
+            
             return True
         except Exception as e:
             print(f"❌ Erro ao adicionar resultado: {e}")

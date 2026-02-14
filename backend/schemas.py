@@ -67,3 +67,82 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+# Activity Schemas
+class ActivityBase(BaseModel):
+    tipo: str
+    titulo: str
+    descricao: Optional[str] = None
+    actor: str = "Kalu"
+    target_id: Optional[int] = None
+    target_type: Optional[str] = None
+    metadata: Optional[str] = None
+    icon: str = "📌"
+
+class Activity(ActivityBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# Document Schemas
+class DocumentBase(BaseModel):
+    titulo: str
+    tipo: str
+    conteudo: Optional[str] = None
+    descricao: Optional[str] = None
+    empresa: Optional[str] = None
+    projeto: Optional[str] = None
+    task_id: Optional[int] = None
+    tags: Optional[str] = None
+    versao: str = "v1"
+
+class Document(DocumentBase):
+    id: int
+    file_path: Optional[str] = None
+    file_size: Optional[int] = None
+    created_at: datetime
+    created_by: str
+    
+    class Config:
+        from_attributes = True
+
+# Memory Schemas
+class MemoryBase(BaseModel):
+    tipo: str
+    titulo: str
+    conteudo: str
+    categoria: Optional[str] = None
+    importancia: str = "normal"
+    empresa: Optional[str] = None
+    tags: Optional[str] = None
+
+class Memory(MemoryBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# Calendar Schemas
+class CalendarEventBase(BaseModel):
+    titulo: str
+    start_date: datetime
+    tipo: str = "task"
+    descricao: Optional[str] = None
+    end_date: Optional[datetime] = None
+    all_day: bool = False
+    empresa: Optional[str] = None
+    task_id: Optional[int] = None
+    recorrente: bool = False
+    recorrencia: Optional[str] = None
+    cor: str = "#3b82f6"
+
+class CalendarEvent(CalendarEventBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
