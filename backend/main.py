@@ -12,8 +12,11 @@ import database
 import schemas
 import auth
 
-# Initialize database
-database.init_db()
+# Initialize database - FORÇAR RECRIAÇÃO COMPLETA
+print("🔄 A recriar base de dados completa...")
+database.Base.metadata.drop_all(bind=database.engine)
+database.Base.metadata.create_all(bind=database.engine)
+print("✅ Base de dados recriada com TODAS as tabelas")
 
 # Create FastAPI app
 app = FastAPI(
